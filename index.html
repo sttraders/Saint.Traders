@@ -1,0 +1,637 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <title>Saint Traders | Trading Dashboard</title>
+  <meta name="description" content="DBTRADERS trading dashboard with market information, charts, and a practice trading interface.">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --gold: #d6ad50;
+      --gold-light: #ffe3a0;
+      --bg: #080808;
+      --panel: #121212;
+      --border: #29251b;
+      --text: #f5f5f5;
+      --muted: #999;
+      --green: #19c784;
+      --red: #ff5364;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 5%;
+      border-bottom: 1px solid var(--border);
+      background: #0b0b0b;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      gap: 15px;
+    }
+
+    .logo {
+      color: var(--gold);
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: 2px;
+    }
+
+    .logo span { color: white; }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    nav a {
+      color: #ddd;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    nav a:hover { color: var(--gold); }
+
+    .btn {
+      border: 1px solid var(--gold);
+      background: var(--gold);
+      color: #111;
+      border-radius: 7px;
+      padding: 11px 16px;
+      font-weight: bold;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--gold);
+    }
+
+    main {
+      max-width: 1250px;
+      margin: auto;
+      padding: 30px 5%;
+    }
+
+    .hero {
+      padding: 28px 0;
+    }
+
+    .eyebrow {
+      color: var(--gold);
+      font-size: 12px;
+      letter-spacing: 3px;
+      font-weight: bold;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 54px);
+      margin: 14px 0;
+      line-height: 1.1;
+    }
+
+    h1 span { color: var(--gold); }
+
+    .muted { color: var(--muted); line-height: 1.7; }
+
+    .notice {
+      background: #17140d;
+      border: 1px solid #514124;
+      padding: 13px 16px;
+      border-radius: 8px;
+      color: #f1d99c;
+      font-size: 13px;
+      margin: 20px 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 15px;
+      margin: 25px 0;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .card-label { color: var(--muted); font-size: 13px; }
+
+    .card-value {
+      font-size: 23px;
+      font-weight: bold;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .gold { color: var(--gold); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+
+    .section-title {
+      font-size: 21px;
+      margin: 32px 0 15px;
+    }
+
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .market-name { font-weight: bold; }
+    .market-price { font-size: 22px; margin: 12px 0 5px; }
+
+    .chart-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .chart-box { height: 310px; position: relative; }
+
+    .trade-form {
+      display: grid;
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    label { color: #ccc; font-size: 13px; }
+
+    input, select {
+      width: 100%;
+      background: #090909;
+      color: white;
+      border: 1px solid #38332a;
+      border-radius: 7px;
+      padding: 12px;
+      margin-top: 7px;
+      outline: none;
+    }
+
+    input:focus, select:focus { border-color: var(--gold); }
+
+    .trade-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .buy { background: #123d2c; color: var(--green); border: 1px solid #216748; }
+    .sell { background: #431a20; color: var(--red); border: 1px solid #71303a; }
+
+    .trade-buttons button {
+      border-radius: 7px;
+      padding: 13px;
+      font-weight: bold;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 450px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 14px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th { color: var(--gold); }
+
+    .auth {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: #000d;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 390px;
+      background: #141414;
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      padding: 25px;
+    }
+
+    .auth-box h2 { color: var(--gold); }
+    .auth-box input { margin-bottom: 12px; }
+    .auth-box .btn { width: 100%; }
+    .close { float: right; color: white; background: none; border: none; font-size: 23px; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 50px;
+      padding: 30px 5%;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 800px) {
+      nav { gap: 10px; }
+      nav a { display: none; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .market-grid { grid-template-columns: 1fr; }
+      .chart-layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 380px) {
+      header { padding: 15px 4%; }
+      .logo { font-size: 18px; }
+      header .btn { padding: 9px; font-size: 12px; }
+      main { padding: 20px 4%; }
+      .card { padding: 14px; }
+      .card-value { font-size: 19px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">DB<span>TRADERS</span></div>
+
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#markets">Markets</a>
+      <a href="#dashboard">Dashboard</a>
+      <button class="btn btn-outline" onclick="openAuth('login')">Login</button>
+      <button class="btn" onclick="openAuth('register')">Sign Up</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="eyebrow">YOUR MARKET. YOUR STRATEGY.</div>
+      <h1>Trade smarter.<br><span>Think bigger.</span></h1>
+      <p class="muted">
+        Explore markets, study price movements, and practise trading
+        with a virtual balance on your personal dashboard.
+      </p>
+      <a href="#dashboard"><button class="btn">Explore Dashboard →</button></a>
+      <div class="notice">
+        PRACTICE MODE — Prices and orders on this starter website are
+        illustrative. No real trades or deposits are processed.
+      </div>
+    </section>
+
+    <section id="dashboard">
+      <h2 class="section-title">Account Overview</h2>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-label">Practice Balance</div>
+          <div class="card-value gold" id="balance">$10,000.00</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Open Positions</div>
+          <div class="card-value" id="positions">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Trades</div>
+          <div class="card-value" id="totalTrades">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Practice P/L</div>
+          <div class="card-value green" id="profit">$0.00</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="markets">
+      <h2 class="section-title">Market Watch</h2>
+
+      <div class="market-grid">
+        <div class="card">
+          <div class="market-name">EUR/USD</div>
+          <div class="market-price" id="eurPrice">1.08420</div>
+          <div class="green">Illustrative price</div>
+        </div>
+        <div class="card">
+          <div class="market-name">GBP/USD</div>
+          <div class="market-price" id="gbpPrice">1.27150</div>
+          <div class="green">Illustrative price</div>
+        </div>
+        <div class="card">
+          <div class="market-name">GOLD (XAU/USD)</div>
+          <div class="market-price" id="goldPrice">2,650.00</div>
+          <div class="green">Illustrative price</div>
+        </div>
+      </div>
+
+      <div class="chart-layout">
+        <div class="card">
+          <h3>EUR/USD Price Chart</h3>
+          <p class="muted">Sample data for demonstration only</p>
+          <div class="chart-box">
+            <canvas id="priceChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Practice Trading</h3>
+          <p class="muted">Place fictional orders using your demo balance.</p>
+
+          <div class="trade-form">
+            <label>
+              Market
+              <select id="asset" onchange="updateChart()">
+                <option value="EUR/USD">EUR/USD</option>
+                <option value="GBP/USD">GBP/USD</option>
+                <option value="XAU/USD">GOLD (XAU/USD)</option>
+              </select>
+            </label>
+
+            <label>
+              Practice Amount (USD)
+              <input id="amount" type="number" min="1" step="1" value="100">
+            </label>
+
+            <div class="trade-buttons">
+              <button class="buy" onclick="placeTrade('BUY')">BUY</button>
+              <button class="sell" onclick="placeTrade('SELL')">SELL</button>
+            </div>
+
+            <p class="muted" id="tradeMessage" aria-live="polite">
+              Your practice orders will appear below.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Practice Trade History</h2>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="history">
+            <tr>
+              <td colspan="4" class="muted">No practice trades yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="auth" id="authModal">
+    <div class="auth-box">
+      <button class="close" onclick="closeAuth()" aria-label="Close">×</button>
+      <h2 id="authTitle">Welcome to DBTRADERS</h2>
+      <p class="muted" id="authDescription">
+        This is a visual starter form. Authentication is not connected.
+      </p>
+      <form onsubmit="demoAuth(event)">
+        <input type="email" id="authEmail" placeholder="Email address" required autocomplete="email">
+        <input type="password" id="authPassword" placeholder="Password (6+ characters)" minlength="6" required autocomplete="current-password">
+        <button class="btn" id="authSubmit" type="submit">Continue</button>
+      </form>
+      <p class="muted" id="authMessage" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="logo">DBTRADERS</div>
+    <p>Market education and practice trading interface.</p>
+    <p>All displayed prices and results are illustrative, not live market data.</p>
+    <p>Trading involves risk. This demo does not execute real transactions.</p>
+    <p>© <span id="year"></span> DBTRADERS. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // All prices are illustrative and randomly updated for demonstration.
+    const prices = {
+      "EUR/USD": 1.08420,
+      "GBP/USD": 1.27150,
+      "XAU/USD": 2650.00
+    };
+
+    let balance = 10000;
+    let totalTrades = 0;
+    let practiceProfit = 0;
+    let positions = 0;
+
+    const tradeHistory = [];
+
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+    const chart = new Chart(document.getElementById("priceChart"), {
+      type: "line",
+      data: {
+        labels: Array.from({ length: 20 }, (_, i) => i + 1),
+        datasets: [{
+          label: "Illustrative price",
+          data: Array.from({ length: 20 }, () => 1.08 + Math.random() * 0.02),
+          borderColor: "#d6ad50",
+          backgroundColor: "rgba(214,173,80,0.10)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#ddd" } }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#999" },
+            grid: { color: "#252525" }
+          },
+          y: {
+            ticks: { color: "#999" },
+            grid: { color: "#252525" }
+          }
+        }
+      }
+    });
+
+    function updateChart() {
+      const asset = document.getElementById("asset").value;
+      const base = prices[asset];
+      chart.data.datasets[0].label = asset + " (illustrative)";
+      chart.data.datasets[0].data = Array.from(
+        { length: 20 },
+        () => base * (1 + (Math.random() - 0.5) * 0.01)
+      );
+      chart.update();
+    }
+
+    function renderDashboard() {
+      document.getElementById("balance").textContent =
+        "$" + balance.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      document.getElementById("positions").textContent = positions;
+      document.getElementById("totalTrades").textContent = totalTrades;
+
+      const profitElement = document.getElementById("profit");
+      profitElement.textContent =
+        (practiceProfit < 0 ? "-$" : "$") +
+        Math.abs(practiceProfit).toFixed(2);
+
+      profitElement.className =
+        "card-value " + (practiceProfit < 0 ? "red" : "green");
+    }
+
+    function placeTrade(side) {
+      const amount = Number(document.getElementById("amount").value);
+      const asset = document.getElementById("asset").value;
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Enter a valid practice amount.");
+        return;
+      }
+
+      if (amount > balance) {
+        alert("Your practice balance is too low.");
+        return;
+      }
+
+      // This is a fictional order simulation, not a real trade.
+      balance -= amount;
+      totalTrades++;
+      positions++;
+
+      const item = {
+        asset,
+        side,
+        amount,
+        status: "Practice only"
+      };
+
+      tradeHistory.unshift(item);
+      renderDashboard();
+      renderHistory();
+
+      document.getElementById("tradeMessage").textContent =
+        side + " practice order created for " + asset +
+        ". No real order was sent.";
+
+      // Return the fictional stake and simulate a small random result.
+      const result = (Math.random() * 2 - 1) * amount * 0.02;
+      balance += amount + result;
+      practiceProfit += result;
+      positions--;
+
+      item.status = "Demo completed";
+      renderDashboard();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById("history");
+
+      if (tradeHistory.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="4">No practice trades yet.</td></tr>';
+        return;
+      }
+
+      tbody.replaceChildren();
+
+      tradeHistory.slice(0, 20).forEach(item => {
+        const row = document.createElement("tr");
+
+        [item.asset, item.side, "$" + item.amount.toFixed(2), item.status]
+          .forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+          });
+
+        tbody.appendChild(row);
+      });
+    }
+
+    function openAuth(mode) {
+      document.getElementById("authModal").style.display = "flex";
+
+      const isRegister = mode === "register";
+      document.getElementById("authTitle").textContent =
+        isRegister ? "Create an Account" : "Welcome Back";
+      document.getElementById("authDescription").textContent =
+        "Demo form only. Connect a secure authentication service to enable real accounts.";
+      document.getElementById("authSubmit").textContent =
+        isRegister ? "Create Account" : "Login";
+      document.getElementById("authPassword").autocomplete =
+        isRegister ? "new-password" : "current-password";
+      document.getElementById("authMessage").textContent = "";
+    }
+
+    function closeAuth() {
+      document.getElementById("authModal").style.display = "none";
+    }
+
+    function demoAuth(event) {
+      event.preventDefault();
+
+      document.getElementById("authMessage").textContent =
+        "This is a frontend preview. No account was created and no details were saved. A secure backend is required.";
+    }
+
+    // Illustrative prices fluctuate locally; these are not live quotes.
+    setInterval(() => {
+      prices["EUR/USD"] += (Math.random() - 0.5) * 0.0005;
+      prices["GBP/USD"] += (Math.random() - 0.5) * 0.0005;
+      prices["XAU/USD"] += (Math.random() - 0.5) * 2;
+
+      document.getElementById("eurPrice").textContent =
+        prices["EUR/USD"].toFixed(5);
+      document.getElementById("gbpPrice").textContent =
+        prices["GBP/USD"].toFixed(5);
+      document.getElementById("goldPrice").textContent =
+        prices["XAU/USD"].toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+    }, 3000);
+  </script>
+</body>
+</html>
